@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+require('dotenv').config(); // Load environment variables
 
 // Middleware to protect routes
 function verifyToken(req, res, next) {
@@ -8,7 +9,8 @@ function verifyToken(req, res, next) {
         return res.status(403).json({ message: 'No token provided' });
     }
 
-    jwt.verify(token, 'yourSecretKey', (err, decoded) => {
+    // Use the secret key from the environment variable
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
             return res.status(500).json({ message: 'Failed to authenticate token' });
         }

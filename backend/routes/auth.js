@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');  // Import bcrypt for password hashing
 const User = require('../models/User');
 const router = express.Router();
+require('dotenv').config(); // Load environment variables
 
 // User Registration
 router.post('/register', async (req, res) => {
@@ -20,8 +21,8 @@ router.post('/register', async (req, res) => {
         const newUser = new User({ name, email, password: hashedPassword });
         await newUser.save();
 
-        // Generate JWT token
-        const token = jwt.sign({ userId: newUser._id }, 'yourSecretKey', { expiresIn: '1h' });
+        // Generate JWT token using secret key from the environment variable
+        const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.json({ token });  // Send token back to frontend
     } catch (error) {
@@ -42,8 +43,8 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-        // Generate JWT token
-        const token = jwt.sign({ userId: user._id }, 'yourSecretKey', { expiresIn: '1h' });
+        // Generate JWT token using secret key from the environment variable
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.json({ token });
     } catch (error) {
@@ -57,7 +58,8 @@ router.get('/me', async (req, res) => {
         const token = req.headers.authorization?.split(' ')[1]; // Extract token from Authorization header
         if (!token) return res.status(401).json({ message: 'No token provided' });
 
-        const decoded = jwt.verify(token, 'yourSecretKey'); // Verify the token
+        // Verify the token using secret key from the environment variable
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); 
         const user = await User.findById(decoded.userId); // Find the user by ID
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -66,6 +68,5 @@ router.get('/me', async (req, res) => {
         res.status(500).json({ message: 'Error retrieving user data' });
     }
 });
-
 
 module.exports = router;
