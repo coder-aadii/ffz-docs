@@ -1,71 +1,79 @@
+// auth.js
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');  // Import bcrypt for password hashing
 const User = require('../models/User');
-const router = express.Router();
-require('dotenv').config(); // Load environment variables
 
-// User Registration
+const router = express.Router();
+
+// Register route
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
 
     try {
         // Check if user already exists
         const userExists = await User.findOne({ email });
-        if (userExists) return res.status(400).json({ message: 'User already exists' });
+        if (userExists) return res.status(400).json({ msg: 'User already exists' });
 
-        // Hash the password before saving
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Log the password before hashing to verify the input
+        console.log('Password before hashing:', password);
 
-        // Create new user with hashed password
-        const newUser = new User({ name, email, password: hashedPassword });
+        // Create new user (password will be hashed automatically due to pre-save hook in the schema)
+        const newUser = new User({ name, email, password });
+
+        // Save the new user
         await newUser.save();
 
-        // Generate JWT token using secret key from the environment variable
-        const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        // Log the hashed password after saving to verify
+        console.log('User registered successfully:', newUser);
 
-        res.json({ token });  // Send token back to frontend
-    } catch (error) {
-        res.status(500).json({ message: 'Error registering user' });
+        // Send success response
+        res.status(201).json({ msg: 'User registered successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
     }
 });
 
-// User Login
+// Login route
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
         // Find user by email
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ message: 'User not found' });
+        if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
 
-        // Compare password using the method in the User model
+        // Compare password
         const isMatch = await user.comparePassword(password);
-        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+        if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
-        // Generate JWT token using secret key from the environment variable
+        // Generate JWT token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
+        // Send token in response
         res.json({ token });
-    } catch (error) {
-        res.status(500).json({ message: 'Error logging in user' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
     }
 });
 
-// Get User Data (Profile)
-router.get('/me', async (req, res) => {
+// GET current user route
+router.get('/me', verifyToken, async (req, res) => {
     try {
-        const token = req.headers.authorization?.split(' ')[1]; // Extract token from Authorization header
-        if (!token) return res.status(401).json({ message: 'No token provided' });
+        const user = await User.findById(req.user); // Get user by ID from JWT
+        if (!user) return res.status(404).json({ msg: 'User not found' });
 
-        // Verify the token using secret key from the environment variable
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); 
-        const user = await User.findById(decoded.userId); // Find the user by ID
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        res.json({ name: user.name }); // Return the user's name
-    } catch (error) {
-        res.status(500).json({ message: 'Error retrieving user data' });
+        // Send user data (excluding password)
+        res.json({
+            name: user.name,
+            email: user.email,
+            _id: user._id
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
     }
 });
 

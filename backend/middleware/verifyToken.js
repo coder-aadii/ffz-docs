@@ -3,8 +3,9 @@ require('dotenv').config(); // Load environment variables
 
 // Middleware to protect routes
 function verifyToken(req, res, next) {
-    const token = req.headers['authorization'];
-    
+    // Get token from 'Authorization' header and remove 'Bearer' prefix
+    const token = req.headers['authorization']?.split(' ')[1]; // Split to get the token after "Bearer "
+
     if (!token) {
         return res.status(403).json({ message: 'No token provided' });
     }

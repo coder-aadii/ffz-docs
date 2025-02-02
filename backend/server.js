@@ -1,25 +1,39 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const cors = require('cors');
-const authRoutes = require('./routes/auth');
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Initialize Express app
 const app = express();
-require('dotenv').config();
 
 // Middleware
-app.use(cors());
-app.use(express.json()); // To parse JSON bodies
+app.use(express.json());  // To parse incoming JSON
+app.use(cors());  // To handle cross-origin requests
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.log('Failed to connect to MongoDB', err));
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  connectTimeoutMS: 30000,  // Increase the timeout to 30 seconds
+})
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+  });
 
 // Routes
+const authRoutes = require('./routes/auth');
+const dashboardRoutes = require('./routes/dashboard');
+
 app.use('/auth', authRoutes);
+app.use('/dashboard', dashboardRoutes);
 
-// Start Server
-const port = process.env.PORT || 3000; // Use Render's dynamic PORT or default to 3000
-
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+// Start server
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
 });
