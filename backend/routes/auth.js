@@ -39,8 +39,8 @@ router.post('/login', async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ message: 'User not found' });
 
-        // Compare password with the hashed one stored in the database
-        const isMatch = await bcrypt.compare(password, user.password);
+        // Compare password using the method in the User model
+        const isMatch = await user.comparePassword(password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
         // Generate JWT token using secret key from the environment variable
