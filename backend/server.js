@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json()); // To parse JSON bodies
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.log('Failed to connect to MongoDB', err));
 
@@ -18,7 +18,8 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 app.use('/auth', authRoutes);
 
 // Start Server
-const PORT = process.env.PORT || 3000; // Use environment variable or default to 3000
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+const port = process.env.PORT || 3000; // Use Render's dynamic PORT or default to 3000
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
