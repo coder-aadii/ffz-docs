@@ -33,7 +33,8 @@ const dashboardRoutes = require('./routes/dashboard');
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 
-// Start server
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+// Start server with dynamic port from Render or fallback to 3000 for local development
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
